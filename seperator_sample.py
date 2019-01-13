@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup, NavigableString
+from collections import OrderedDict
 import pprint as pp
 
 # gets chapter heading
@@ -14,7 +15,7 @@ def getSectionHeading(soup) :
         return False
 
 # extracts section heading from body1
-def splitSectionHeading(body_text) :
+def extractSectionHeading(body_text) :
     try :
         element = body_text.find("p", {"class": "sectiontitle"})
         element.extract()
@@ -31,13 +32,13 @@ def getGroupHeading(soup) :
 #######################################################################
 if __name__ == "__main__" :
 
-    chapter_dict = {}
-    section_dict = {}
-    group_dict = {}
-    paragraph_dict = {}
+    chapter_dict = OrderedDict()
+    section_dict = OrderedDict()
+    group_dict = OrderedDict()
+    paragraph_dict = OrderedDict()
 
     #html_doc = "V04S05C04 - AUSTRALIAN STANDARD MATERIEL ISSUE AND MOVEMENT PRIORITY SYSTEM.htm"
-    #test_doc = 'sample_2.html'
+    test_doc = 'sample.htm'
     doc = "ESCMCDVersion/204_1.htm"
     with open(doc) as fp:
         soup = BeautifulSoup(fp, 'lxml')
@@ -45,6 +46,9 @@ if __name__ == "__main__" :
     # Init vars for dict
     chapter_heading = getChapterHeading(soup)
     section_heading = getSectionHeading(soup)
+    group_heading = False # EDGE CASE: A GROUP TITLE IN THE FIRST PARAGRAPH WILL NOT BE CAUSE, NEED A METHOD OF INITIALIZING VARIABLE
+
+    section_group_bool = False
 
     # Spooiky Iterations
     section_counter = 1
@@ -57,6 +61,7 @@ if __name__ == "__main__" :
         next_section_heading = getSectionHeading(paragraph)
         next_group_heading = getGroupHeading(paragraph)
 
+
         # if multiple body1 in a section, this condition until final body1 reached
         if next_section_heading == False :
 
@@ -65,10 +70,38 @@ if __name__ == "__main__" :
 
             paragraph_counter += 1
 
+        # new group
+        if group_heading != False:
+
+            group_key = "Group" + str(group_counter)
+            group_dict[group_key] = {
+                "Heading" : group_heading
+            }
+
+            section_group_bool = True
+            #pp.pprint(group_dict)
+
+
+        group_heading = next_group_heading
+
+        # dump paragraphs to group
+        if next_group_heading != False and section_group_bool == True:
+            group_key = "Group" + str(group_counter)
+            group_dict[group_key].update(paragraph_dict)
+
+            group_counter += 1
+
+            #reset parapgraph vars
+            paragraph_counter = 1
+            paragraph_dict = OrderedDict()
 
         # final body1 reached, append into section dict
-        else :
+        if next_section_heading != False :
 
+            # extract section title from end of paragraph
+            extractSectionHeading(paragraph)
+
+            # assign text and keys
             paragraph_key = "Para" + str(paragraph_counter)
             paragraph_dict[paragraph_key] = paragraph.get_text()
 
@@ -76,25 +109,30 @@ if __name__ == "__main__" :
             section_counter += 1
             print(section_key)
 
-            # split on section title, and assign section title for next iteration
-            splitSectionHeading(paragraph)
-
             section_dict[section_key] = {
-                "Heading" : section_heading,
+                "Heading" : section_heading
             }
-            section_dict[section_key].update(paragraph_dict)
+            if section_group_bool :
+                group_dict[group_key].update(paragraph_dict)
+                section_dict[section_key].update(group_dict)
+            else :
+                section_dict[section_key].update(paragraph_dict)
 
             #oerwrite sectiontitle with next_sectiontitle
             section_heading = next_section_heading
-            group_heading = next_group_heading
 
             #reset parapgraph vars
             paragraph_counter = 1
-            paragraph_dict = {}
+            paragraph_dict = OrderedDict()
+
+            # reset group vars
+            group_counter = 1
+            group_dict = OrderedDict()
+            section_group_bool = False
 
     chapter_dict[chapter_heading] = section_dict
     #pp.pprint(chapter_dict)
-
+    chapter_dict = dict(chapter_dict)
     import json
     with open('data.json', 'w') as outfile:
         json.dump(chapter_dict, outfile)
