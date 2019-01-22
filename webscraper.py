@@ -2,19 +2,24 @@
 
 """
 This web scraping program will extract the chapter heading, section title and
-subtitles for each valid htm page and store it in the given folder with its
-corresponding text in the format shown in htm_format.json and output this to a
+subtitles for each valid htm page and store it with its corresponding text in
+the format shown in htm_format.json, outputing the results to a
 folder of seperate json files.
 
 NOTE: The program will print out the ignored files to notify the user.
 Due to inconsistent formatting and useless pages such as pages containing links,
-only images or archived reports these pages are skipped in this program.
+only images or archived reports these pages are skipped in this program and can
+be checked by their name printed above them before they are skipped.
+I spent time checking if skipped files were indeed useless to ensure good
+information was not being wasted.
 """
 import os
 from bs4 import BeautifulSoup, NavigableString
 from collections import OrderedDict
 import pprint as pp
 import json
+
+#################################FUNCTIONS######################################
 
 # gets chapter heading
 def getChapterHeading(soup):
@@ -74,6 +79,9 @@ def scrapePage(htm_path):
     """
     Due to inconsistent formatting and useless pages such as pages containing links,
     only images, archived reports or glossaries are skipped in this program.
+    If one wishes to include such pages more time is needed to create seperate
+    functions that can handle the new structures. For semantic analysis purposes
+    these pages are mostly useless.
     """
     #no formatted chapter heading, usually these are pages containing links and no relevant info
     if(getChapterHeading(soup)==False):
@@ -249,8 +257,7 @@ def scrapePage(htm_path):
     group_counter = 1
     paragraph_counter = 1
 
-
-
+    #search all body paragraphs
     for paragraph in soup.find_all("li", {"class": "body1"}):
         # check for section heading in paragraph
         next_section_heading = getSectionHeading(paragraph)
@@ -378,7 +385,6 @@ for htm_page in os.listdir('directory_name'):
         scrapePage('directory_name/' + htm_page)
 """
 
-scrapePage("ESCMCDVersion/22990.htm")
 
 for htm_page in os.listdir('ESCMCDVersion'):
     if("htm" in str(htm_page)):
