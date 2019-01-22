@@ -1,0 +1,37 @@
+{
+  "V04S01C01 - HOW TO SEGMENT ADF INVENTORY":{
+    "Section1": {
+      "Heading": "INTRODUCTION",
+      "Para1": "Inventory segmentation is..."
+    },
+    "Section2": {
+      "Heading": "AIM",
+      "Para1": "The aim of this chapter..."
+    },
+    "Section3": {
+      "Heading": "SCOPE",
+      "Para1" : "This chapter is applicable..."
+    },
+    "Section4": {
+      "Heading": "INVENTORY SEGMENTATION ROLES AND RESPONSIBILITY",
+      "Para1" : "The designated Logistics Manager is..."
+    },
+    "Section5" : {
+      "Heading" : "DETERMINING THE ITEM SUPPLY...",
+      "Para1" : "There are three main determinations...",
+      "Para2" : "The following performance and catalog..."
+    },
+    "Section6" : {
+      "Heading" : "STOCK TYPES",
+      "Group1" : {
+        "Heading" : "Authorised Stock Types",
+        "Para1" : "There are currently...",
+        "Para2" : "Definitions of stock types...",
+        "Para3" : "The EFCM..."
+      },
+      "Group2" : {
+        "Heading" : "Determining provisioning..."
+      }
+    }
+  }
+}

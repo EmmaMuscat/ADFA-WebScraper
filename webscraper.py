@@ -233,7 +233,7 @@ def scrapePage(htm_path):
         #dump each chapter to given directory in a seperate folder identified by its
         #chapter code
         print(chapter_heading)
-        with open('/Users/emma/Desktop/ADFA work/processed_chapters/chapter_' + chapter_heading[:10] + '.json', 'w') as outfile:
+        with open('/Users/emma/Desktop/ADFA work/processed_chapters/chapter_' + chapter_heading[:15] + '.json', 'w') as outfile:
             json.dump(chapter_dict, outfile)
         return None
 
@@ -367,7 +367,7 @@ def scrapePage(htm_path):
 
     #dump each chapter to given directory in a seperate folder identified by its
     print(chapter_heading)
-    with open('/Users/emma/Desktop/ADFA work/processed_chapters/' + chapter_heading[:10] + '.json', 'w') as outfile:
+    with open('/Users/emma/Desktop/ADFA work/processed_chapters/' + chapter_heading[:15] + '.json', 'w') as outfile:
         json.dump(chapter_dict, outfile)
 
 ################################################################################
