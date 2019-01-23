@@ -194,7 +194,7 @@ def tfid_similarity(corp,vec,feature_length):
 When given the path of an individual chapter json result the program will compute
 similarity between the given section name (eg. "PURPOSE") and output this to a txt file
 """
-def compare_sections(path,section_name):
+def compare_internal_sections(path,section_name):
     #initialise variables
     para_texts = []
     cleaned_texts = []
@@ -238,7 +238,7 @@ def compare_sections(path,section_name):
             para_texts.append(section_texts[i])
             cleaned_texts.append(cleaned_text)
 
-
+        #store the relevant section as the query vector (using index from earlier)
         section_contents = document2[key]["Section" + str(index + 1)]
         #section_heading = section_contents['Heading']
         individual_para_text = para_texts[index]
@@ -286,9 +286,11 @@ def compare_sections(path,section_name):
 
 """
 when given the path to an individual chapters json result file and the directory to the residing
-processed chapters the program will compare the chapter to the others in the directory
+processed chapters the program will compare the chapter to the others in the directory using
+gensims tfid semantic comparison and nltk cleaning methods to detect similarity between chapter text,
 outputting the results ordered in a csv file for future analysis.
 """
+#dont think it even works tbh idk
 def compare_chapter(individual_document_path,directory_path):
     para_texts = []
     cleaned_texts = []
@@ -298,7 +300,7 @@ def compare_chapter(individual_document_path,directory_path):
     for json_page in os.listdir(directory_path):
         if('json' in str(json_page)):
             with open(directory_path + json_page) as f:
-                print(json_page)
+                print(json_page + " has being processed")
                 data = json.load(f)
                 para_text = get_chapter_paragraph_text(data)
                 cleaned_text = clean_text(para_text)
@@ -342,37 +344,141 @@ def compare_chapter(individual_document_path,directory_path):
         i+=1
     sim_list.sort(key=lambda tup: tup[1],reverse=True)
 
-    #output to a results doc the top n(10 in this example) most similar chapters to the queired chapter
-    with open('/Users/emma/Desktop/ADFA work/similar_chapters.txt', 'w') as outfile:
-        outfile.write(individual_chapter_heading)
-        outfile.write("\n")
-        outfile.write("\n")
-        for i in range(10):
-            #chapter heading
-            outfile.write("CHAPTER:" + str(sim_list[i][0]))
-            outfile.write("\n")
-            outfile.write("SIMILARITY:" + str(sim_list[i][1]))
-            outfile.write("\n")
-            outfile.write("\n")
-        outfile.close()
-    #sims_list = sorted(enumerate(sim_list), key=lambda item: -item[1])
-
     #output results to a csv file
     with open('/Users/emma/Desktop/ADFA work/Similarity Results/' + individual_chapter_heading + '.csv','w') as outFile:
         np.savetxt('/Users/emma/Desktop/ADFA work/Similarity Results/' + individual_chapter_heading + '.csv',sim_list,fmt='%s' ,delimiter =',')
     outFile.close()
 
+    print("Chapter has been compared to all others in the given directory, see the correspdonding outfile for results")
+
 
 """
 given a chapter path and its corresponding chosen section this program will go
-through every JSON file in the given directory_path and compare the chosen section
-to chapters sections with the same name
+through every JSON file in the given directory_path and compare the chosen sections
+paragraph text to other chapters paragraph text with the under the same section name
 """
-def compare_alike_sections(individual_document_path,directory_path,section_name):
+def compare_alike_sections(individual_document_path,section_name,directory_path):
+    #declare variables
+    para_texts = []
+    cleaned_texts = []
+    wordList = []
+    chapter_names = []
+    flag = False
+    section_identifiers = []
+
+
+    #iterate through each chapter in the directory
+    for json_page in os.listdir(directory_path):
+        if('json' in str(json_page)):
+            with open(directory_path + json_page) as f:
+                data = json.load(f)
+                section_counter = 0
+
+                #count the sections for the chapter and get the chapter title key
+                for key, value in data.items():
+                    for key2, value2 in value.items():
+                        #k2 = the section(section1)
+                        #v2 = the paragraphs
+                        section_counter+=1
+
+                #store the chapters text as sections
+                #section headings are seperated in a list to be able to be compared if necessary
+                section_texts = get_chapter_paragraph_text_as_list(data)
+                chapter_heading = get_chapter_name(data)
+
+                #go through each section individually
+                for i in range(section_counter):
+                    section_contents = data[key]["Section" + str(i + 1)]
+                    section_heading = section_contents['Heading']
+                    if section_heading == section_name:
+                        print(chapter_heading, section_heading)
+                        print(section_contents)
+                        print("________________________________________________")
+                        # there was a compatible section, process it (i being the found section)
+                        section_identifiers.append(chapter_heading[:10] + ' : ' +  section_heading)
+                        cleaned_text = clean_text(section_texts[i])
+                        if(tokenisation(cleaned_text)):
+                            IndividwordList = tokenisation(section_texts[i])
+                            wordList.append(IndividwordList)
+                        para_texts.append(section_texts[i])
+                        cleaned_texts.append(cleaned_text)
+
+    #process the query vector (chosen section from chosen chapter) and compare it to the other found sections under the same name
+    #perform the necessary calculations to get a vector representation of the section to be compared
+
+    #open the given chapter path
+    with open(individual_document_path) as f:
+        found = False
+        individual_data = json.load(f)
+        section_counter = 0
+        for key, value in individual_data.items():
+            for key2, value2 in value.items():
+                #k2 = the section(section1)
+                #v2 = the paragraphs
+                section_counter+=1
+                #print(section_counter)
+
+        #section headings are seperated in a list to be able to be compared if necessary
+        section_texts = get_chapter_paragraph_text_as_list(individual_data)
+        chapter_heading = get_chapter_name(individual_data)
+
+        for i in range(section_counter):
+            section_contents = individual_data[key]["Section" + str(i + 1)]
+            section_heading = section_contents['Heading']
+            if section_heading == section_name:
+                found = True
+                #store this as the query vector
+                individual_section_text = section_texts[i]
+                individual_cleaned_text = clean_text(individual_section_text)
+                individual_wordList = tokenisation(individual_section_text)
+                individual_chapter_id = get_chapter_name(individual_data) + section_name
+
+        #print(individual_cleaned_text)
+    if found == False:
+        print("ERROR: No section of that name was found in this section")
+        return False
+
+    #give list of each preprocessed document
+    corpus_dictionary = create_dictionary(wordList)
+
+    #create query vector
+    query_vector = create_doc_vector(corpus_dictionary,individual_cleaned_text)
+
+    #compare the query doc to the rest of the corpus
+    corpus = create_corpus(corpus_dictionary,wordList)
+
+    #get the unique word count/feature length
+    feature_length = getFeatureLength(corpus_dictionary)
+
+    #get the similarity scores
+    sims = tfid_similarity(corpus,query_vector,feature_length)
+
+    #combine chapter headings with their scores and order them
+    sim_list = []
+    i = 0
+    for sim in sims:
+        sim_list.append((section_identifiers[i],sim))
+        i+=1
+    sim_list.sort(key=lambda tup: tup[1],reverse=True)
+
+
+    #output results to a csv file
+    with open('/Users/emma/Desktop/ADFA work/ComparedSections/' + individual_chapter_id + '.csv','w') as outFile:
+        np.savetxt('/Users/emma/Desktop/ADFA work/ComparedSections/' + individual_chapter_id + '.csv',sim_list,fmt='%s' ,delimiter =',')
+    outFile.close()
 
 
 
+#compare_internal_sections('/Users/emma/Desktop/ADFA work/processed_chapters/V14S06C03 .json',"PROCESS OVERVIEW")
+#compare_chapter('/Users/emma/Desktop/ADFA work/processed_chapters/V10S03C03C.json', '/Users/emma/Desktop/ADFA work/processed_chapters/')
+#compare_alike_sections('/Users/emma/Desktop/ADFA work/processed_chapters/V08S04C01 .json',"AIM",'/Users/emma/Desktop/ADFA work/processed_chapters/')
 
-#compare_sections('/Users/emma/Desktop/ADFA work/processed_chapters/V14S06C03 .json',"PROCESS OVERVIEW")
+"""
+Can run the compare_chapter function for any amount of chapters, see below which
+compares all the processed chapters in Test_Chapters to those eachother
+"""
 
-compare_chapter('/Users/emma/Desktop/ADFA work/processed_chapters/V10S03C03C.json', '/Users/emma/Desktop/ADFA work/processed_chapters/')
+for json_page in os.listdir('/Users/emma/Desktop/ADFA work/Test_Chapters/'):
+    if('json' in str(json_page)):
+        compare_chapter('/Users/emma/Desktop/ADFA work/processed_chapters/' + json_page,'/Users/emma/Desktop/ADFA work/processed_chapters/')
+print("All chapters in the supplied directories have been compared")
