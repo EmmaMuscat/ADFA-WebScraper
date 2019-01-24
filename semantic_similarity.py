@@ -310,7 +310,7 @@ def compare_chapter(individual_document_path,directory_path):
                 para_texts.append(para_text)
                 cleaned_texts.append(clean_text)
                 name = get_chapter_name(data)
-                chapter_names.append(name)
+                chapter_names.append(name[:15])
 
 
     #perform the necessary calculations to get a vector representation of the chapter to be compared
@@ -340,7 +340,7 @@ def compare_chapter(individual_document_path,directory_path):
     sim_list = []
     i = 0
     for sim in sims:
-        sim_list.append((chapter_names[i],sim))
+        sim_list.append((individual_chapter_heading,chapter_names[i],sim))
         i+=1
     sim_list.sort(key=lambda tup: tup[1],reverse=True)
 
@@ -391,11 +391,11 @@ def compare_alike_sections(individual_document_path,section_name,directory_path)
                     section_contents = data[key]["Section" + str(i + 1)]
                     section_heading = section_contents['Heading']
                     if section_heading == section_name:
-                        print(chapter_heading, section_heading)
-                        print(section_contents)
-                        print("________________________________________________")
+                        print(chapter_heading + " " + section_heading + " is being processed.")
+                        #print(section_contents)
+                        #print("________________________________________________")
                         # there was a compatible section, process it (i being the found section)
-                        section_identifiers.append(chapter_heading[:10] + ' : ' +  section_heading)
+                        section_identifiers.append(chapter_heading[:30])
                         cleaned_text = clean_text(section_texts[i])
                         if(tokenisation(cleaned_text)):
                             IndividwordList = tokenisation(section_texts[i])
@@ -463,22 +463,22 @@ def compare_alike_sections(individual_document_path,section_name,directory_path)
 
 
     #output results to a csv file
-    with open('/Users/emma/Desktop/ADFA work/ComparedSections/' + individual_chapter_id + '.csv','w') as outFile:
-        np.savetxt('/Users/emma/Desktop/ADFA work/ComparedSections/' + individual_chapter_id + '.csv',sim_list,fmt='%s' ,delimiter =',')
+    with open('/Users/emma/Desktop/ADFA work/ComparedSections/' + individual_chapter_id + ':' + section_name + '.csv','w') as outFile:
+        np.savetxt('/Users/emma/Desktop/ADFA work/ComparedSections/' + individual_chapter_id + ':' + section_name + '.csv',sim_list,fmt='%s' ,delimiter =',')
     outFile.close()
 
 
 
 #compare_internal_sections('/Users/emma/Desktop/ADFA work/processed_chapters/V14S06C03 .json',"PROCESS OVERVIEW")
-#compare_chapter('/Users/emma/Desktop/ADFA work/processed_chapters/V10S03C03C.json', '/Users/emma/Desktop/ADFA work/processed_chapters/')
-#compare_alike_sections('/Users/emma/Desktop/ADFA work/processed_chapters/V08S04C01 .json',"AIM",'/Users/emma/Desktop/ADFA work/processed_chapters/')
+#compare_chapter('/Users/emma/Desktop/ADFA work/processed_chapters/V09S04C01 .json', '/Users/emma/Desktop/ADFA work/processed_chapters/')
+compare_alike_sections('/Users/emma/Desktop/ADFA work/processed_chapters/V08S04C01 .json',"AIM",'/Users/emma/Desktop/ADFA work/processed_chapters/')
 
 """
-Can run the compare_chapter function for any amount of chapters, see below which
-compares all the processed chapters in Test_Chapters to those eachother
+Can run the compare_chapter function for any amount of chapters, see below,
+compares all the processed chapters in to  eachother
 """
 
-for json_page in os.listdir('/Users/emma/Desktop/ADFA work/Test_Chapters/'):
+for json_page in os.listdir('/Users/emma/Desktop/ADFA work/processed_chapters/'):
     if('json' in str(json_page)):
         compare_chapter('/Users/emma/Desktop/ADFA work/processed_chapters/' + json_page,'/Users/emma/Desktop/ADFA work/processed_chapters/')
 print("All chapters in the supplied directories have been compared")
