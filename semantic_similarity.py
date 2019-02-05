@@ -1,7 +1,6 @@
 import spacy
 from scipy.spatial.distance import cosine
 import numpy as np
-import logging
 import sklearn
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
@@ -20,8 +19,8 @@ from docx import Document
 import csv
 
 """
-Due to the proper structuring of the JSON used future analysis is able to be
-perforemed purely on paragraph text whilst avoiding false similarity measures
+Due to the proper structuring of the JSON used, future analysis is able to be
+performed purely on paragraph text whilst avoiding false similarity measures
 found in repeated section titles and subtitles (eg. INTRODUCTION)
 
 Furthermore Chapters are properly labelled and irrelevant pages that contain
@@ -290,7 +289,6 @@ processed chapters the program will compare the chapter to the others in the dir
 gensims tfid semantic comparison and nltk cleaning methods to detect similarity between chapter text,
 outputting the results ordered in a csv file for future analysis.
 """
-#dont think it even works tbh idk
 def compare_chapter(individual_document_path,directory_path):
     para_texts = []
     cleaned_texts = []

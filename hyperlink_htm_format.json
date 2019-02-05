@@ -1,0 +1,24 @@
+{
+  "V04S01C01 - HOW TO SEGMENT ADF INVENTORY" :{
+    "Hyperlink1" : {
+      "hyperlink_id" : "volume 7 section 3 chapter 1",
+      "paragraph_text" : "Equipment owners and operators are responsible for carrying out..."
+    },
+  }
+}
+
+{
+  "V07S03C02 - IDENTIFICATION OF MAINTENANCE LIABILITY" :{
+
+    "Hyperlink1" : {
+      "hyperlink_id" : "MSEEME",
+      "paragraph_text" : "When an operator identifies maintenance on a piece of equipment is beyond their capability.. "
+
+    },
+
+    "Hyperlink2" : {
+      "hyperlink_id" : "GM153",
+      "paragraph_text" : "When an operator identifies maintenance on a piece of equipment is beyond their capability..."
+    }
+  }
+}
