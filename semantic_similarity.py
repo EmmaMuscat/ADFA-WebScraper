@@ -1,3 +1,6 @@
+#Emma K Muscat
+
+#imports
 import spacy
 from scipy.spatial.distance import cosine
 import numpy as np
@@ -24,9 +27,10 @@ performed purely on paragraph text whilst avoiding false similarity measures
 found in repeated section titles and subtitles (eg. INTRODUCTION)
 
 Furthermore Chapters are properly labelled and irrelevant pages that contain
-images or just links to other pages are ignored in the previous analysis
+images or just links to other pages are ignored in the previous analysis and
+will not be analysed
 
-see webscraper.py
+see webscraper.py for further information on the JSON file input
 """
 
 ##################################FUNCTIONS#####################################
@@ -42,7 +46,7 @@ def get_chapter_name(document):
             #v2 = the paragraphs
             section_counter+=1
 
-# combines a given chapters paragraph text excluding any headings
+# combines a given chapters paragraph text, excluding any headings.
 def get_chapter_paragraph_text(document1):
     paragraph_text = ""
     section_counter = 0
@@ -106,13 +110,6 @@ def get_chapter_paragraph_text_as_list(document1):
 
         paragraph_texts.append(appended_paras)
 
-    #for a in paragraph_texts:
-    #    print(a)
-    #    print("----------------------------------------")
-    #    print("\n")
-    #    print("\n")
-    #print(paragraph_texts)
-
     return(paragraph_texts)
 
 #processes given chapter_text,returns list of processed words
@@ -175,7 +172,7 @@ def create_corpus(dictionary,docList):
     return corpus
 
 #The function doc2bow() simply counts the number of occurrences of each distinct word,
-# converts the word to its integer word id and returns the result as a sparse vector
+#converts the word to its integer word id and returns the result as a sparse vector
 def create_doc_vector(dictionary,new_doc_text):
     new_vec = dictionary.doc2bow(new_doc_text.lower().split())
     return(new_vec)
@@ -191,7 +188,10 @@ def tfid_similarity(corp,vec,feature_length):
 
 """
 When given the path of an individual chapter json result the program will compute
-similarity between the given section name (eg. "PURPOSE") and output this to a txt file
+similarity between the given section name in the given chapter (eg. "PURPOSE")
+with every other section within the same chapter
+
+Note: not in use, determined irrelevant
 """
 def compare_internal_sections(path,section_name):
     #initialise variables
@@ -234,6 +234,7 @@ def compare_internal_sections(path,section_name):
             if(tokenisation(cleaned_text)):
                 IndividwordList = tokenisation(section_texts[i])
                 wordList.append(IndividwordList)
+
             para_texts.append(section_texts[i])
             cleaned_texts.append(cleaned_text)
 
@@ -284,10 +285,10 @@ def compare_internal_sections(path,section_name):
 
 
 """
-when given the path to an individual chapters json result file and the directory to the residing
-processed chapters the program will compare the chapter to the others in the directory using
+when given the path to an individual chapters JSON result file and the directory to the additional residing
+JSON chapters the program will compare the chosen chapter to the others in the directory using
 gensims tfid semantic comparison and nltk cleaning methods to detect similarity between chapter text,
-outputting the results ordered in a csv file for future analysis.
+outputting the ordered results in a csv file for future analysis.
 """
 def compare_chapter(individual_document_path,directory_path):
     para_texts = []
@@ -314,6 +315,7 @@ def compare_chapter(individual_document_path,directory_path):
     #perform the necessary calculations to get a vector representation of the chapter to be compared
     with open(individual_document_path) as f:
         individual_data = json.load(f)
+
     individual_para_text = get_chapter_paragraph_text(individual_data)
     individual_cleaned_text = clean_text(individual_para_text)
     individual_wordList = tokenisation(individual_para_text)

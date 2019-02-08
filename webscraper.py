@@ -2,17 +2,19 @@
 
 """
 This web scraping program will extract the chapter heading, section title and
-subtitles for each valid htm page and store it with its corresponding text in
-the format shown in htm_format.json, outputing the results to a
-folder of seperate json files.
+subtitles/group titles for each valid htm page and store it with its corresponding
+paragraph text in the format shown in htm_format.json, outputing these results to a
+folder of chapter independent json files.
 
 NOTE: The program will print out the ignored files to notify the user.
 Due to inconsistent formatting and useless pages such as pages containing links,
 only images or archived reports these pages are skipped in this program and can
 be checked by their name printed above them before they are skipped.
 I spent time checking if skipped files were indeed useless to ensure good
-information was not being wasted.
+information was not being wasted but this can always be reviewed in future.
 """
+
+#imports
 import os
 from bs4 import BeautifulSoup, NavigableString
 from collections import OrderedDict
@@ -24,7 +26,7 @@ import json
 # gets chapter heading
 def getChapterHeading(soup):
     try:
-        #dealing with headings that contain unencodeable ascii namely, "<?>"
+        #dealing with headings that contain unencodeable ascii, namely: "<?>"
         chap_head = soup.find('h4').get_text()
         chap_head=chap_head.encode('ascii',errors='ignore')
         return chap_head
@@ -61,7 +63,7 @@ def getGroupHeading(soup):
     except Exception as e:
         return False
 
-#scrapes a given htm page given its path
+#scrapes a chosen htm page given its path
 def scrapePage(htm_path):
 
     #dictionary declarations for data storage
@@ -77,11 +79,11 @@ def scrapePage(htm_path):
 ##################################SPECIAL CASES#################################
 ################################################################################
     """
-    Due to inconsistent formatting and useless pages such as pages containing links,
-    only images, archived reports or glossaries are skipped in this program.
+    Due to inconsistent formatting and useless pages, such as pages containing links,
+    only images, archived reports or glossaries, they are skipped in this program.
     If one wishes to include such pages more time is needed to create seperate
     functions that can handle the new structures. For semantic analysis purposes
-    these pages are mostly useless.
+    these pages are mostly useless and thus this is why they are ignored.
     """
     #no formatted chapter heading, usually these are pages containing links and no relevant info
     if(getChapterHeading(soup)==False):
@@ -365,7 +367,7 @@ def scrapePage(htm_path):
     #chapter_code = chapter_heading.split("-", 1)[0]
 
 
-    #dump each chapter to given directory in a seperate folder identified by its
+    #dump each chapter to given directory in a seperate folder identified by its chapter title
     print(chapter_heading)
     with open('/Users/emma/Desktop/ADFA work/processed_chapters/' + chapter_heading[:15] + '.json', 'w') as outfile:
         json.dump(chapter_dict, outfile)
@@ -376,7 +378,7 @@ def scrapePage(htm_path):
 Simply give the program your directory full of htm files and it will process each
 web page and store these by chapter, section and subtitle
 and store them in a json file for you. It is set to check for the htm keyword
-to avoid weird folders you may have left inside.
+to avoid unnecessary folders you may have left inside.
 
 Eg.
 for htm_page in os.listdir('directory_name'):
