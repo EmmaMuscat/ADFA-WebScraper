@@ -95,7 +95,7 @@ def scrapePage(htm_path):
 
     #output to JSON in chosen directory
     out_directory = '/Users/emma/Desktop/ADFA work/processed_hyperlink_chapters/'
-    with open(out_directory + str(chapt_head)[:12] + '.json', 'w') as outfile:
+    with open(out_directory + 'hyperlink ' + str(chapt_head)[:12] + '.json', 'w') as outfile:
         json.dump(chapter_dict, outfile)
 
 
@@ -230,7 +230,7 @@ def preProcess(hyper_paras):
                 if j==0:
                     hyper_paras[i+1] = split_paras[start_point]
                 else:
-                    hyper_paras[i+1] = hyper_paras[i+1] + ' ' + split_paras[start_point]
+                    hyper_paras[i+1] = hyper_paras[i+1] + ' ' + split_paras[start_point] + ' '
 
             start_point+=1
 
@@ -287,7 +287,7 @@ def processHyperlink(json_result):
     data = [hyperlink_titles,hyperlink_ids,processed_hyper_paras]
     df = pd.DataFrame(data)
     df_transposed = df.T
-    df_transposed.columns = ['Display Title','URL','Surrounding Terms']
+    df_transposed.columns = ['Display Title','URL','Proceeding Sentences']
     df_transposed.to_csv("/Users/emma/Desktop/ADFA work/hyperlink_results/" + chapt_title + ".csv")
 
 
