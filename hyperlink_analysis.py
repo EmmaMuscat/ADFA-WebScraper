@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Emma K Muscat 2019
 
 """This program will first store and then analyse the context of a given hyperlink
 using the surrounding paragraph text given a htm page to process. It is
@@ -202,9 +203,27 @@ def getJsonHyperlinkParagraphs(document,hyperlink_titles):
     return hyperlink_sentences
 
 """This function will handle the list of paragraphs for each hyperlink and preprocess them
-ready for analysis, it is a bit slow and takes a dictionary"""
-
+ready for analysis, it is a little bit slow and takes a dictionary of each hyperlinks paragraph text that occurs
+before the hyperlink"""
 def preProcess(hyper_paras):
+    new_hyper_paras = dict()
+
+    #for each hyperlinks text
+    for i in range(len(hyper_paras)):
+        #split on the fullstops and take the last/nearest sentence
+        split = hyper_paras[i+1].split('.')
+        split_len = len(split)
+        #if the sentence is bigger than 5 words keep it, else combine with the the split before it
+        if(len((split[split_len-1])) > 30):
+            hyper_paras[i+1] = split[split_len-1]
+        elif(split_len > 1):
+            hyper_paras[i+1] = split[split_len-2] + split[split_len-1]
+        else:
+            hyper_paras[i+1] = split[split_len-1]
+
+    return hyper_paras
+
+def preProcess_attempt1(hyper_paras):
     new_hyper_paras = dict()
 
     for i in range(len(hyper_paras)):
@@ -289,6 +308,8 @@ def processHyperlink(json_result):
     df_transposed = df.T
     df_transposed.columns = ['Display Title','URL','Proceeding Sentences']
     df_transposed.to_csv("/Users/emma/Desktop/ADFA work/hyperlink_results/" + chapt_title + ".csv")
+
+    print("See Results of this chapter in " + chapt_title + ".csv" )
 
 
 

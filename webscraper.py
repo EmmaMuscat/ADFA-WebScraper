@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Emma K Muscat 2019
 
 """
 This web scraping program will extract the chapter heading, section title and
@@ -250,14 +251,11 @@ def scrapePage(htm_path):
     group_heading = False
     section_group_bool = False
 
-    # EDGE CASE: A GROUP TITLE IN THE FIRST PARAGRAPH WILL NOT BE CAUSE,
-    # NEED A METHOD OF INITIALIZING VARIABLE
-
-
     #Counter variables for key creation
     section_counter = 1
     group_counter = 1
     paragraph_counter = 1
+    body1_count = len(soup.find_all("li", {"class": "body1"}))
 
     #search all body paragraphs
     for paragraph in soup.find_all("li", {"class": "body1"}):
@@ -265,9 +263,9 @@ def scrapePage(htm_path):
         next_section_heading = getSectionHeading(paragraph)
         next_group_heading = getGroupHeading(paragraph)
 
-
         # if multiple body1 in a section, this condition until final body1 reached
         if next_section_heading == False:
+
 
             paragraph_key = "Para" + str(paragraph_counter)
             paragraph_dict[paragraph_key] = paragraph.get_text()
@@ -283,7 +281,7 @@ def scrapePage(htm_path):
             section_group_bool = True
         group_heading = next_group_heading
 
-        # dump paragraphs to group it has ended
+        # dump paragraphs to group if it has ended
         if next_group_heading != False and section_group_bool == True:
             group_key = "Group" + str(group_counter)
             group_dict[group_key].update(paragraph_dict)
@@ -295,8 +293,6 @@ def scrapePage(htm_path):
 
         #special conditon for final paragraph
         if paragraph.get_text() == final_paragraph_text:
-            # extract section title from end of paragraph
-            extractSectionHeading(paragraph)
 
             # assign text and keys
             paragraph_key = "Para" + str(paragraph_counter)
@@ -362,23 +358,121 @@ def scrapePage(htm_path):
             section_group_bool = False
 
 
+
+    #add the appendices if they exist (not of same format requires a seperate case)
+    appendix_flag = False
+    paragraph_counter = 1
+
+    for appendix in soup.find_all("li",{"class","appendixlistentry"}):
+        appendix_flag = True
+        appendix_key = "Para" + str(paragraph_counter)
+        paragraph_dict[appendix_key] = appendix.get_text()
+        paragraph_counter+=1
+
+
+
+    if appendix_flag:
+        section_key = "Section" + str(section_counter)
+        section_counter += 1
+
+        section_dict[section_key] = {
+            "Heading" : "APPENDICES"
+        }
+
+        section_dict[section_key].update(paragraph_dict)
+
+
+    #add the annexes if they exist (not of same format requires a seperate case)
+    annex_flag = False
+    paragraph_counter = 1
+
+    for annex in soup.find_all("li",{"class","annexlistentry"}):
+        annex_flag = True
+        annex_key = "Para" + str(paragraph_counter)
+        paragraph_dict[annex_key] = annex.get_text()
+        paragraph_counter+=1
+
+
+
+    if annex_flag:
+        section_key = "Section" + str(section_counter)
+        section_counter += 1
+
+        section_dict[section_key] = {
+            "Heading" : "ANNEXES"
+        }
+
+        section_dict[section_key].update(paragraph_dict)
+
+
+
+
+    #add the references if they exist (not of same format requires a seperate case)
+    reference_flag = False
+    paragraph_counter = 1
+
+    #iterate through each body1 paragraph
+    index_tracker = 0
+    for body1 in soup.find_all("li", {"class": "body1"}):
+        #found the proceeding body1 containing the title
+        index_tracker+=1
+        if(body1.find("p",{"class","referencetitle"}) or body1.find("p",{"class","sectiontitle"}) ):
+            #get the index for the body paragraph we need to start at
+            reference_flag = True
+            final_index = index_tracker
+
+    if reference_flag:
+        section_key = "Section" + str(section_counter)
+        section_counter += 1
+
+        section_dict[section_key] = {
+            "Heading" : "REFERENCES"
+        }
+
+        bodies = soup.find_all("li", {"class": "body1"})
+        max_range = len(soup.find_all("li", {"class": "body1"})) - final_index-1
+
+        for i in range(100):
+            #dont go out of range
+            if(final_index+i < len(bodies)):
+                if(bodies[final_index+i].find("p",{"class":"annexlist"})):
+                    #last body1 useful to us break
+                    reference_key = "Para" + str(paragraph_counter)
+                    paragraph_dict[reference_key] = bodies[final_index+i].get_text()
+                    paragraph_counter+=1
+                    break
+                else:
+                    #its a body1 we can use
+                    reference_key = "Para" + str(paragraph_counter)
+                    paragraph_dict[reference_key] = bodies[final_index+i].get_text()
+                    paragraph_counter+=1
+
+        section_dict[section_key].update(paragraph_dict)
+
+
+
+
+
+    #complete the dictionaries before sending to the JSON file
+
     chapter_dict[chapter_heading] = section_dict
     chapter_dict = OrderedDict(chapter_dict)
-    #chapter_code = chapter_heading.split("-", 1)[0]
+
 
 
     #dump each chapter to given directory in a seperate folder identified by its chapter title
     print(chapter_heading)
     with open('/Users/emma/Desktop/ADFA work/processed_chapters/' + chapter_heading[:15] + '.json', 'w') as outfile:
         json.dump(chapter_dict, outfile)
+        #print(outfile)
 
 ################################################################################
 
 """
 Simply give the program your directory full of htm files and it will process each
-web page and store these by chapter, section and subtitle
-and store them in a json file for you. It is set to check for the htm keyword
-to avoid unnecessary folders you may have left inside.
+web page and store these by chapter, section and subtitle with added hyperlink results
+within each section and store them in an appropriately labelled json file for you.
+It is set to check for the htm keyword to avoid unnecessary folders you may have left inside.
 
 Eg.
 for htm_page in os.listdir('directory_name'):
@@ -387,6 +481,8 @@ for htm_page in os.listdir('directory_name'):
         scrapePage('directory_name/' + htm_page)
 """
 
+#test_page = '9683.htm'
+#scrapePage('ESCMCDVersion/' + test_page)
 
 for htm_page in os.listdir('ESCMCDVersion'):
     if("htm" in str(htm_page)):
