@@ -2,8 +2,8 @@
 # Emma K Muscat 2019
 
 """
-This web scraping program will extract the chapter heading, section title and
-subtitles/group titles for each valid htm page and store it with its corresponding
+This web scraping program will extract the chapter heading, section titles,
+subtitles/group titles and hyoerlinks for each valid htm page and store it with its corresponding
 paragraph text in the format shown in htm_format.json, outputing these results to a
 folder of chapter independent json files.
 
@@ -24,6 +24,7 @@ import json
 
 #################################FUNCTIONS######################################
 
+
 # gets chapter heading
 def getChapterHeading(soup):
     try:
@@ -34,7 +35,14 @@ def getChapterHeading(soup):
     except Exception as e:
         return False
 
-#given some soup paragraph object,check for hyperlinks and return the necessary dictionary
+#to ensure that references dont get put under the wrong section due to inconsistent sectiontitles
+def checkReferencesStarting(body1):
+    if(body1.find("p",{"class","referencetitle"})):
+        return True
+    else:
+        return False
+
+#given some beautifulsoup paragraph object,check for hyperlinks and return the necessary dictionary
 def getHyperlinks(paragraph,paragraph_counter,group_counter):
     #dictionary declarations
     hyperlink_dict = OrderedDict()
@@ -58,6 +66,7 @@ def getHyperlinks(paragraph,paragraph_counter,group_counter):
             "id" : href_id,
             "paragraph_text" : paragraph_text
         }
+
     if(hasHyper):
         return hyperlink_dict
     else:
@@ -75,15 +84,20 @@ def getFinalBody1(soup):
 # gets section heading, checks if exists, else returns False
 def getSectionHeading(soup):
     try :
-        return soup.find("p", {"class": "sectiontitle"}).get_text()
+        if(soup.find("p", {"class": "sectiontitle"}).get_text()):
+            return soup.find("p", {"class": "sectiontitle"}).get_text()
     except Exception as e:
         return False
 
 # extracts section heading from given body_text
 def extractSectionHeading(body_text):
     try :
-        element = body_text.find("p", {"class": "sectiontitle"})
-        element.extract()
+        if(body_text.find("p", {"class": "sectiontitle"})):
+            element = body_text.find("p", {"class": "sectiontitle"})
+            element.extract()
+        elif(body_text.find("p", {"class": "referencetitle"})):
+            element = body_text.find("p", {"class": "referencetitle"})
+            element.extract()
     except Exception as e:
         pass
 
@@ -137,13 +151,16 @@ def scrapePage(htm_path):
             print("A page only containing links was ignored")
             return None
 
+
     #not all pages have a section heading, just chapter and body text, special storage action taken
     if(len(soup.find_all("p", {"class": "sectiontitle"}))==0):
         # Init vars for dict
         chapter_heading = getChapterHeading(soup)
         section_heading = getSectionHeading(soup)
         final_paragraph_text = getFinalBody1(soup)
+        paragraph_hyper_dict = OrderedDict()
         group_heading = False
+        hyperlink_bool = False
          # EDGE CASE: A GROUP TITLE IN THE FIRST PARAGRAPH WILL NOT BE CAUSE,
          # NEED A METHOD OF INITIALIZING VARIABLE
 
@@ -157,8 +174,23 @@ def scrapePage(htm_path):
         #begin body paragraph iteration
         for paragraph in soup.find_all("li", {"class": "body1"}):
 
+            #get all the hyperlinks for this given paragraph and store them with previous section paragraph hyperlinks
+            if(getHyperlinks(paragraph,paragraph_counter,group_counter)!=False):
+                if(hyperlink_bool == True):
+                    paragraph_hyper_dict["Hyperlinks"].update(getHyperlinks(paragraph,paragraph_counter,group_counter))
+                else:
+                    hyperlink_bool = True
+                    paragraph_hyper_dict["Hyperlinks"] = getHyperlinks(paragraph,paragraph_counter,group_counter)
+
             # check for section heading in paragraph
             next_section_heading = getSectionHeading(paragraph)
+            try:
+                if(next_section_heading == False):
+                    if(paragraph.find("p", {"class": "referencetitle"}).get_text()):
+                        next_section_heading = paragraph.find("p", {"class": "referencetitle"}).get_text()
+            except Exception as e:
+                next_section_heading = False
+
             next_group_heading = getGroupHeading(paragraph)
 
             # if multiple body1 in a section, this condition until final body1 reached
@@ -279,9 +311,12 @@ def scrapePage(htm_path):
     final_section_heading = getFinalSectionHeading(soup)
     final_paragraph_text = getFinalBody1(soup)
     group_heading = False
+    body_ref_bool = False
     section_group_bool = False
     #check if this section has already had hyperlinks found
     hyperlink_bool = False
+    #to avoid multiple reference sections
+    references_bool = False
 
     #Counter variables for key creation
     section_counter = 1
@@ -295,6 +330,7 @@ def scrapePage(htm_path):
 
     #search all body paragraphs
     for paragraph in soup.find_all("li", {"class": "body1"}):
+
         #get all the hyperlinks for this given paragraph and store them with previous section paragraph hyperlinks
         if(getHyperlinks(paragraph,paragraph_counter,group_counter)!=False):
             if(hyperlink_bool == True):
@@ -305,6 +341,14 @@ def scrapePage(htm_path):
 
         # check for section heading in paragraph
         next_section_heading = getSectionHeading(paragraph)
+        try:
+            if(next_section_heading == False):
+                if(paragraph.find("p", {"class": "referencetitle"}).get_text()):
+                    print("did it")
+                    next_section_heading = paragraph.find("p", {"class": "referencetitle"}).get_text()
+        except Exception as e:
+            next_section_heading = False
+
         next_group_heading = getGroupHeading(paragraph)
 
         # if multiple body1 in a section, this condition until final body1 reached
@@ -344,7 +388,7 @@ def scrapePage(htm_path):
             section_counter += 1
 
             section_dict[section_key] = {
-                "Heading" : section_heading
+                "Section_Heading" : section_heading
             }
 
             if section_group_bool :
@@ -379,7 +423,7 @@ def scrapePage(htm_path):
             section_counter += 1
 
             section_dict[section_key] = {
-                "Heading" : section_heading
+                "Section_Heading" : section_heading
             }
 
             #append the hyperlink dict for this section
@@ -394,6 +438,11 @@ def scrapePage(htm_path):
 
             #oerwrite sectiontitle with next_sectiontitle
             section_heading = next_section_heading
+
+            #to avoid multiple reference sections
+            if(section_heading == "REFERENCES"):
+                body_ref_bool = True
+
 
             #reset parapgraph vars
             paragraph_counter = 1
@@ -466,55 +515,78 @@ def scrapePage(htm_path):
 
         section_dict[section_key].update(paragraph_dict)
 
+    href_counter = 0
+    annex_hyper_bool = False
+    annex_hyper_dict = OrderedDict()
+    #annex hyperlinks (simply list them as specified)
+    for annex in soup.find_all("li",{"class","annexlistentry"}):
+        for link in annex.find_all('a',href = True):
+            annex_hyper_bool = True
+            href_counter+=1
+            hyperlink_title = link.get_text()
+            href_id = link['href']
+            #store the paragraphs relevant info in a dictionary
+            annex_hyper_dict["Annex" + str(href_counter)] = {
+                "title" : hyperlink_title,
+                "id" : href_id,
+            }
+
+    AnnexHyperlinks = OrderedDict()
+    AnnexHyperlinks["Hyperlinks"] = annex_hyper_dict
+    if(annex_hyper_bool):
+        section_dict[section_key].update(AnnexHyperlinks)
+
 
 
     ##############################REFERENCES####################################
-    #add the references if they exist (not of same format requires a seperate case)
-    reference_flag = False
-    paragraph_counter = 1
+    if(body_ref_bool == False):
+        #add the references if they exist (not of same format requires a seperate case)
+        reference_flag = False
+        paragraph_counter = 1
 
-    #iterate through each body1 paragraph
-    index_tracker = 0
-    for body1 in soup.find_all("li", {"class": "body1"}):
-        #found the proceeding body1 containing the title
-        index_tracker+=1
-        if(body1.find("p",{"class","referencetitle"}) or body1.find("p",{"class","sectiontitle"}) ):
-            #get the index for the body paragraph we need to start at
-            reference_flag = True
-            final_index = index_tracker
+        #iterate through each body1 paragraph
+        index_tracker = 0
+        for body1 in soup.find_all("li", {"class": "body1"}):
+            #found the proceeding body1 containing the title
+            index_tracker+=1
+            if(body1.find("p",{"class","referencetitle"}) or body1.find("p",{"class","sectiontitle"}) ):
+                #get the index for the body paragraph we need to start at
+                reference_flag = True
+                final_index = index_tracker
 
-    if reference_flag:
-        section_key = "Section" + str(section_counter)
-        section_counter += 1
+        if reference_flag:
+            section_key = "Section" + str(section_counter)
+            section_counter += 1
 
-        section_dict[section_key] = {
-            "Heading" : "REFERENCES"
-        }
+            section_dict[section_key] = {
+                "Heading" : "REFERENCES"
+            }
 
-        bodies = soup.find_all("li", {"class": "body1"})
-        max_range = len(soup.find_all("li", {"class": "body1"})) - final_index-1
+            bodies = soup.find_all("li", {"class": "body1"})
+            max_range = len(soup.find_all("li", {"class": "body1"})) - final_index-1
 
-        for i in range(100):
-            #dont go out of range
-            if(final_index+i < len(bodies)):
-                if(bodies[final_index+i].find("p",{"class":"annexlist"})):
-                    #last body1 useful to us break
-                    reference_key = "Para" + str(paragraph_counter)
-                    paragraph_dict[reference_key] = bodies[final_index+i].get_text()
-                    paragraph_counter+=1
-                    break
-                else:
-                    #its a body1 we can use
-                    reference_key = "Para" + str(paragraph_counter)
-                    paragraph_dict[reference_key] = bodies[final_index+i].get_text()
-                    paragraph_counter+=1
+            for i in range(100):
+                #dont go out of range
+                if(final_index+i < len(bodies)):
+                    if(bodies[final_index+i].find("p",{"class":"annexlist"})):
+                        #last body1 useful to us break
+                        reference_key = "Para" + str(paragraph_counter)
+                        paragraph_dict[reference_key] = bodies[final_index+i].get_text()
+                        paragraph_counter+=1
+                        break
+                    else:
+                        #its a body1 we can use
+                        reference_key = "Para" + str(paragraph_counter)
+                        paragraph_dict[reference_key] = bodies[final_index+i].get_text()
+                        paragraph_counter+=1
 
-        section_dict[section_key].update(paragraph_dict)
+            section_dict[section_key].update(paragraph_dict)
+
+
 
 
 
     #complete the dictionaries before sending to the JSON file
-
     chapter_dict[chapter_heading] = section_dict
     chapter_dict = OrderedDict(chapter_dict)
 
@@ -529,7 +601,7 @@ def scrapePage(htm_path):
 ################################################################################
 
 """
-Simply give the program your directory full of htm files and it will process each
+Simply give the program your directory full of SCM htm files and it will process each
 web page and store these by chapter, section and subtitle with added hyperlink results
 within each section and store them in an appropriately labelled json file for you.
 It is set to check for the htm keyword to avoid unnecessary folders you may have left inside.
@@ -541,10 +613,10 @@ for htm_page in os.listdir('directory_name'):
         scrapePage('directory_name/' + htm_page)
 """
 
-test_page = '78797.htm'
-scrapePage('ESCMCDVersion/' + test_page)
+#test_page = '47629_7.htm'
+#scrapePage('ESCMCDVersion/' + test_page)
 
-#for htm_page in os.listdir('ESCMCDVersion'):
-#    if("htm" in str(htm_page)):
-#        print(htm_page)
-#        scrapePage('ESCMCDVersion/' + htm_page)
+for htm_page in os.listdir('ESCMCDVersion'):
+    if("htm" in str(htm_page)):
+        print(htm_page)
+        scrapePage('ESCMCDVersion/' + htm_page)

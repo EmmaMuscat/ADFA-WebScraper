@@ -14,7 +14,18 @@
     },
     "Section4": {
       "Heading": "INVENTORY SEGMENTATION ROLES AND RESPONSIBILITY",
-      "Para1" : "The designated Logistics Manager is..."
+      "Para1" : "The designated Logistics Manager is...",
+       "Hyperlinks": {
+        "Paragraph1 Group1 Hyperlink1": {
+          "paragraph_text": "The designated Logistics Manager is...",
+          "id": "46382.htm",
+          "title": "V08S04C02B1 IDT Receipt Normal Item"
+        },
+        "Paragraph1 Group1 Hyperlink2": {
+          "paragraph_text": "The designated Logistics Manager is",
+          "id": "46389.htm",
+          "title": "V08S04C02B2 IDT Receipt Batch Lot Managed Item"
+        }
     },
     "Section5" : {
       "Heading" : "DETERMINING THE ITEM SUPPLY...",
